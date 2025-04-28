@@ -14,7 +14,7 @@ public class AccountingLedgerApp {
         showHomeMenu();
     }
 
-    //error outputs
+    //loading with error outputs
 
     private static void loadTransactions() {
         File file = new File(FILE_NAME);
@@ -30,7 +30,7 @@ public class AccountingLedgerApp {
             System.out.println("Error Did Not Load: " + e.getMessage());
         }
     }
-
+    //saving with error outputs
     private static void saveTransaction(Transaction t) {
         try (BufferedWriter bw = new BufferedWriter((new FileWriter(FILE_NAME, true)))) {
             bw.write(t.toCsv());
@@ -85,7 +85,7 @@ private static void addDeposit() {
     System.out.println("Deposit recorded.");
 }
 
-private static void makePayment() {
+private static void makePayment() {  //same as addDeposit but amounted it 'negated'
     System.out.print("Description: ");
     String desc = scanner.nextLine();
     System.out.print("Vendor: ");
@@ -117,4 +117,33 @@ private static void showLedgerMenu() {
             default:  System.out.println("Invalid choice, try again.");
         }
     }
+}
+
+private static List<Transaction> filterDeposits() {
+    List<Transaction> out = new ArrayList<>();
+    for (Transaction t : transactions) if (t.getAmount() < 0) out.add(t);
+    return out;
+}
+
+private static List<Transaction> filterPayments() {
+    List<Transaction> out = new ArrayList<>();
+    for (Transaction t : transactions) if (t.getAmount() < 0) out.add(t);
+    return out;
+}
+
+private static void displayTransactions(List<Transaction> list) {
+    if (list.isEmpty()) {
+        System.out.println("No transactions to display.");
+    } else {
+        for (Transaction t : list) {
+            System.out.println(t);
+        }
+    }
+}
+
+private static String[] currentDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    String time = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    return new String[]{ date, time };
 }
