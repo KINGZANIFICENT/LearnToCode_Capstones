@@ -3,37 +3,40 @@ package com.pluralsight;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class AccountingLedgerApp {
     private static final String FILE_NAME = "transactions.csv";
     private static List<Transaction> transactions = new ArrayList<>();
     private static Scanner scanner = new Scanner(System.in);
+    private static String owner;
 
     public static void main(String[] args) {
+        // 1) Ask for owner/title
+        System.out.print("Enter your name or account title: ");
+        owner = scanner.nextLine().trim();
+
+        // 2) Load past transactions and compute balances
         loadTransactions();
+        calculateBalances();
+
+        // 3) Show custom banner + menu
         showHomeMenu();
     }
 
-    // loading with error outputs
     private static void loadTransactions() {
         File file = new File(FILE_NAME);
         if (!file.exists()) return;
-
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                Transaction t = Transaction.fromCsv(line);
-                transactions.add(0, t);
+                transactions.add(0, Transaction.fromCsv(line));
             }
         } catch (IOException e) {
             System.out.println("Error Did Not Load: " + e.getMessage());
         }
     }
 
-    // saving with error outputs
     private static void saveTransaction(Transaction t) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
             bw.write(t.toCsv());
@@ -43,8 +46,16 @@ public class AccountingLedgerApp {
         }
     }
 
-    // the home menu
     private static void showHomeMenu() {
+
+        System.out.println("LL      GGGG  TTTTTT   EEEEE  NN   NN ");
+        System.out.println("LL     GG       TT     EE     NNN  NN ");
+        System.out.println("LL     GG  GGG  TT     EEEE   NN N NN ");
+        System.out.println("LL     GG   GG  TT     EE     NN  NNN ");
+        System.out.println("LLLLL   GGGGG   TT     EEEEE  NN   NN ");
+
+        System.out.println("\u001B[32mWelcome, " + owner + "! Here's your personalized ledger.\u001B[0m");
+
         while (true) {
             System.out.println("\n=== Home Screen ===");
             System.out.println("D) Add Deposit");
@@ -65,43 +76,51 @@ public class AccountingLedgerApp {
                     showLedgerMenu();
                     break;
                 case "X":
-                    System.out.println("Goodbye");
+                    printSummary();
+                    System.out.println("Goodbye, " + owner + "!");
                     return;
                 default:
-                    System.out.println("Invalid choice. Choose one from the above list.");
+                    System.out.println("Invalid choice. Choose one from the list.");
             }
         }
     }
 
-    // handles the deposit
     private static void addDeposit() {
         System.out.print("Description: ");
         String desc = scanner.nextLine();
         System.out.print("Vendor: ");
         String ven = scanner.nextLine();
+        System.out.print("Category (e.g. Food, Rent): ");
+        String cat = scanner.nextLine();
         System.out.print("Amount: ");
         double amt = Double.parseDouble(scanner.nextLine());
         String[] dt = currentDateTime();
-        Transaction t = new Transaction(dt[0], dt[1], desc, ven, amt);
+
+        Transaction t = new Transaction(dt[0], dt[1], desc, ven, cat, amt);
         transactions.add(0, t);
+        calculateBalances();
         saveTransaction(t);
-        System.out.println("Deposit recorded.");
+        System.out.println("✅ Deposit recorded.");
     }
-    // handles the payment
-    private static void makePayment() {  // same as addDeposit but amount is negated
+
+    private static void makePayment() {
         System.out.print("Description: ");
         String desc = scanner.nextLine();
-        System.out.print("Your Name: ");
+        System.out.print("Vendor: ");
         String ven = scanner.nextLine();
+        System.out.print("Category (e.g. Utilities, Subscription): ");
+        String cat = scanner.nextLine();
         System.out.print("Amount: ");
         double amt = -Math.abs(Double.parseDouble(scanner.nextLine()));
         String[] dt = currentDateTime();
-        Transaction t = new Transaction(dt[0], dt[1], desc, ven, amt);
+
+        Transaction t = new Transaction(dt[0], dt[1], desc, ven, cat, amt);
         transactions.add(0, t);
+        calculateBalances();
         saveTransaction(t);
-        System.out.println("Payment recorded.");
+        System.out.println("✅ Payment recorded.");
     }
-    //shows ledger after selecting it on home menu
+
     private static void showLedgerMenu() {
         while (true) {
             System.out.println("\n=== Ledger ===");
@@ -113,11 +132,19 @@ public class AccountingLedgerApp {
             String choice = scanner.nextLine().trim().toUpperCase();
 
             switch (choice) {
-                case "A": displayTransactions(transactions);        break;
-                case "D": displayTransactions(filterDeposits());    break;
-                case "P": displayTransactions(filterPayments());    break;
-                case "H": return;
-                default:  System.out.println("Invalid choice, try again.");
+                case "A":
+                    displayTransactions(transactions);
+                    break;
+                case "D":
+                    displayTransactions(filterDeposits());
+                    break;
+                case "P":
+                    displayTransactions(filterPayments());
+                    break;
+                case "H":
+                    return;
+                default:
+                    System.out.println("Invalid choice, try again.");
             }
         }
     }
@@ -140,12 +167,38 @@ public class AccountingLedgerApp {
 
     private static void displayTransactions(List<Transaction> list) {
         if (list.isEmpty()) {
-            System.out.println("No transactions.");
+            System.out.println("No transactions to display.");
         } else {
             for (Transaction t : list) {
                 System.out.println(t);
             }
         }
+    }
+
+    private static void calculateBalances() {
+        double bal = 0;
+        // oldest first → newest last: index size-1 → 0
+        for (int i = transactions.size() - 1; i >= 0; i--) {
+            bal += transactions.get(i).getAmount();
+            transactions.get(i).setBalance(bal);
+        }
+    }
+
+    private static void printSummary() {
+        double totalDeposits = 0, totalPayments = 0;
+        for (Transaction t : transactions) {
+            if (t.getAmount() > 0) totalDeposits += t.getAmount();
+            else                totalPayments += t.getAmount();
+        }
+        double endingBalance = transactions.isEmpty()
+                ? 0
+                : transactions.get(0).getBalance();
+        System.out.printf(
+                "\n=== Summary ===%nDeposits:  $%.2f%nPayments:  $%.2f%nEnding Balance: $%.2f%n",
+                totalDeposits,
+                -totalPayments,
+                endingBalance
+        );
     }
 
     private static String[] currentDateTime() {
