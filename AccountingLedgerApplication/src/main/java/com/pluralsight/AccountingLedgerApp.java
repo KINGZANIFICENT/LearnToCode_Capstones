@@ -251,10 +251,8 @@ public class AccountingLedgerApp {
         System.out.printf("Current balance: $%.2f%n", bal);
     }
 
-    /**
-     * Prompts for a category and shows total spending (payments) in that category.
-     * NOTE: Requires Transaction.getCategory().
-     */
+
+     // Prompts for a category and shows total spending (payments) in that category.
     private static void checkSpendingByCategory() {
         System.out.print("Enter category to check spending: ");
         String cat = scanner.nextLine().trim().toLowerCase();
