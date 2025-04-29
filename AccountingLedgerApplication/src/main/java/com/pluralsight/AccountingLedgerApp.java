@@ -62,7 +62,7 @@ public class AccountingLedgerApp {
             System.out.println("Error saving transactions: " + e.getMessage());
         }
     }
-
+    // LG10 banner
     private static void showHomeMenu() {
         System.out.println("LL      GGGG  TTTTTT   EEEEE  NN   NN ");
         System.out.println("LL     GG       TT     EE     NNN  NN ");
@@ -70,7 +70,7 @@ public class AccountingLedgerApp {
         System.out.println("LL     GG   GG  TT     EE     NN  NNN ");
         System.out.println("LLLLL   GGGGG   TT     EEEEE  NN   NN ");
         System.out.println("\u001B[32mWelcome, " + owner + "! Here's your personalized ledger.\u001B[0m");
-
+         // home screen
         while (true) {
             System.out.println("\n=== Home Screen ===");
             System.out.println("D) Add Deposit");
@@ -103,7 +103,7 @@ public class AccountingLedgerApp {
             }
         }
     }
-
+    // deposit logic
     private static void addDeposit() {
         System.out.print("Description: ");
         String desc = scanner.nextLine().trim();
@@ -131,7 +131,7 @@ public class AccountingLedgerApp {
         saveTransaction(t);
         System.out.println(" Deposit recorded.");
     }
-
+    // payment logic negative payments
     private static void makePayment() {
         System.out.print("Description: ");
         String desc = scanner.nextLine().trim();
@@ -159,7 +159,7 @@ public class AccountingLedgerApp {
         saveTransaction(t);
         System.out.println("Payment recorded.");
     }
-
+    // the sub menu
     private static void showLedgerMenu() {
         while (true) {
             System.out.println("\n=== Ledger ===");
@@ -195,7 +195,7 @@ public class AccountingLedgerApp {
             }
         }
     }
-
+    // list only the deposits
     private static List<Transaction> filterDeposits() {
         List<Transaction> out = new ArrayList<>();
         for (Transaction t : transactions) {
@@ -203,7 +203,7 @@ public class AccountingLedgerApp {
         }
         return out;
     }
-
+    // list only the payments
     private static List<Transaction> filterPayments() {
         List<Transaction> out = new ArrayList<>();
         for (Transaction t : transactions) {
@@ -211,7 +211,7 @@ public class AccountingLedgerApp {
         }
         return out;
     }
-
+    //if the list is empty prints each transaction
     private static void displayTransactions(List<Transaction> list) {
         if (list.isEmpty()) {
             System.out.println("No transactions to display.");
@@ -221,7 +221,7 @@ public class AccountingLedgerApp {
             }
         }
     }
-
+    // recalculates the running balance
     private static void calculateBalances() {
         double bal = 0;
         for (int i = transactions.size() - 1; i >= 0; i--) {
@@ -229,7 +229,7 @@ public class AccountingLedgerApp {
             transactions.get(i).setBalance(bal);
         }
     }
-
+    // prints the balance
     private static void printSummary() {
         double totalDeposits = 0, totalPayments = 0;
         for (Transaction t : transactions) {
@@ -242,20 +242,20 @@ public class AccountingLedgerApp {
                 totalDeposits, -totalPayments, endingBalance
         );
     }
-
+    // prints the current balance
     private static void printCurrentBalance() {
         calculateBalances();
         double bal = transactions.isEmpty() ? 0.0 : transactions.get(0).getBalance();
         System.out.printf("Current balance: $%.2f%n", bal);
     }
-
+    //get current date and time
     private static String[] currentDateTime() {
         LocalDateTime now = LocalDateTime.now();
         String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String time = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         return new String[]{date, time};
     }
-
+    // prompts for filters
     private static void searchTransactions() {
         System.out.print("Start Date (yyyy-MM-dd) or leave blank: ");
         String startDate = scanner.nextLine().trim();
@@ -267,7 +267,7 @@ public class AccountingLedgerApp {
         String vendor = scanner.nextLine().trim().toLowerCase();
         System.out.print("Exact Amount or leave blank: ");
         String amountStr = scanner.nextLine().trim();
-
+        // applies whats not blank
         List<Transaction> filtered = new ArrayList<>(transactions);
         if (!startDate.isEmpty()) {
             filtered.removeIf(t -> t.getDate().compareTo(startDate) < 0);
@@ -291,7 +291,7 @@ public class AccountingLedgerApp {
         }
         displayTransactions(filtered);
     }
-
+    // handles deletes
     private static void deleteTransaction() {
         if (transactions.isEmpty()) {
             System.out.println("No transactions to delete.");
