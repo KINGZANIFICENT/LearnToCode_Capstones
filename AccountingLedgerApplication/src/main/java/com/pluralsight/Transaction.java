@@ -9,7 +9,7 @@ public class Transaction {
     private double amount;
     private double balance;
 
-    // constructor
+    // constructor without balance (balance defaults to 0)
     public Transaction(String date, String time, String description,
                        String vendor, String category, double amount) {
         this.date = date;
@@ -18,17 +18,25 @@ public class Transaction {
         this.vendor = vendor;
         this.category = category;
         this.amount = amount;
-        this.balance = 0; // default, will be updated later
+        this.balance = 0;
+    }
+
+    // overloaded constructor with balance
+    public Transaction(String date, String time, String description,
+                       String vendor, String category,
+                       double amount, double balance) {
+        this(date, time, description, vendor, category, amount);
+        this.balance = balance;
     }
 
     // Getters
-    public String getDate()     { return date; }
-    public String getTime()     { return time; }
-    public String getDescription() { return description; }
-    public String getVendor()   { return vendor; }
-    public String getCategory() { return category; }
-    public double getAmount()   { return amount; }
-    public double getBalance()  { return balance; }
+    public String getDate()         { return date; }
+    public String getTime()         { return time; }
+    public String getDescription()  { return description; }
+    public String getVendor()       { return vendor; }
+    public String getCategory()     { return category; }
+    public double getAmount()       { return amount; }
+    public double getBalance()      { return balance; }
 
     // Setter for balance
     public void setBalance(double balance) {
@@ -43,32 +51,49 @@ public class Transaction {
 
     // Load a transaction from a pipe-delimited line
     public static Transaction fromCsv(String csvLine) {
-        // split on literal '|'
         String[] parts = csvLine.split("\\|");
 
-        // we need at least: date | time | desc | vendor | amount
-        if (parts.length < 5) {
-            throw new IllegalArgumentException("Invalid CSV format: " + csvLine);
+        try {
+            switch (parts.length) {
+                case 5: {
+                    // date | time | desc | vendor | amount
+                    String date        = parts[0];
+                    String time        = parts[1];
+                    String description = parts[2];
+                    String vendor      = parts[3];
+                    double amount      = Double.parseDouble(parts[4]);
+                    return new Transaction(date, time, description, vendor, "Uncategorized", amount);
+                }
+                case 6: {
+                    // date | time | desc | vendor | category | amount
+                    String date        = parts[0];
+                    String time        = parts[1];
+                    String description = parts[2];
+                    String vendor      = parts[3];
+                    String category    = parts[4];
+                    double amount      = Double.parseDouble(parts[5]);
+                    return new Transaction(date, time, description, vendor, category, amount);
+                }
+                case 7: {
+                    // date | time | desc | vendor | category | amount | balance
+                    String date        = parts[0];
+                    String time        = parts[1];
+                    String description = parts[2];
+                    String vendor      = parts[3];
+                    String category    = parts[4];
+                    double amount      = Double.parseDouble(parts[5]);
+                    double balance     = Double.parseDouble(parts[6]);
+                    return new Transaction(date, time, description, vendor, category, amount, balance);
+                }
+                default:
+                    throw new IllegalArgumentException(
+                            "Invalid CSV format (expected 5–7 fields, got "
+                                    + parts.length + "): " + csvLine);
+            }
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException(
+                    "Invalid numeric value in CSV: " + csvLine, nfe);
         }
-
-        String date        = parts[0];
-        String time        = parts[1];
-        String description = parts[2];
-        String vendor      = parts[3];
-        double amount      = Double.parseDouble(parts[4]);
-
-        // file has no category column, so assign a default
-        String category = "Uncategorized";
-
-        Transaction tx = new Transaction(date, time, description, vendor, category, amount);
-
-        // if there's a sixth part, treat it as balance
-        if (parts.length > 5) {
-            double balance = Double.parseDouble(parts[5]);
-            tx.setBalance(balance);
-        }
-
-        return tx;
     }
 
     // Save as pipe-delimited

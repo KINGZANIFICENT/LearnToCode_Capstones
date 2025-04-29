@@ -4,6 +4,7 @@ import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AccountingLedgerApp {
     private static final String FILE_NAME = "transactions.csv";
@@ -43,6 +44,17 @@ public class AccountingLedgerApp {
             bw.newLine();
         } catch (IOException e) {
             System.out.println("Error Did Not Save: " + e.getMessage());
+        }
+    }
+
+    /** Overwrite the entire CSV from current list */
+    private static void saveAllTransactions() {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_NAME))) {
+            for (Transaction t : transactions) {
+                pw.println(t.toCsv());
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving transactions: " + e.getMessage());
         }
     }
 
@@ -128,6 +140,7 @@ public class AccountingLedgerApp {
             System.out.println("D) Deposits");
             System.out.println("P) Payments");
             System.out.println("S) Search");
+            System.out.println("R) Remove Transaction(s)");
             System.out.println("H) Home");
             System.out.print("Choose an option: ");
             String choice = scanner.nextLine().trim().toUpperCase();
@@ -144,6 +157,9 @@ public class AccountingLedgerApp {
                     break;
                 case "S":
                     searchTransactions();
+                    break;
+                case "R":
+                    deleteTransaction();
                     break;
                 case "H":
                     return;
@@ -247,5 +263,80 @@ public class AccountingLedgerApp {
         }
 
         displayTransactions(filtered);
+    }
+
+    private static void deleteTransaction() {
+        if (transactions.isEmpty()) {
+            System.out.println("No transactions to delete.");
+            return;
+        }
+
+        System.out.println("Delete by:");
+        System.out.println("  1) ID");
+        System.out.println("  2) Date (YYYY-MM-DD)");
+        System.out.println("  3) Vendor");
+        System.out.print("Choose mode: ");
+        String mode = scanner.nextLine().trim();
+
+        switch (mode) {
+            case "1":
+                // Delete by ID
+                for (int i = 0; i < transactions.size(); i++) {
+                    System.out.printf("%2d) %s%n", i + 1, transactions.get(i));
+                }
+                System.out.print("Enter the ID to delete: ");
+                try {
+                    int id = Integer.parseInt(scanner.nextLine().trim()) - 1;
+                    if (id < 0 || id >= transactions.size()) {
+                        System.out.println("ID out of range.");
+                        return;
+                    }
+                    Transaction removed = transactions.remove(id);
+                    System.out.println("Deleted: " + removed);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid number.");
+                    return;
+                }
+                break;
+
+            case "2":
+                // Delete by date
+                System.out.print("Enter date (YYYY-MM-DD): ");
+                String date = scanner.nextLine().trim();
+                List<Transaction> byDate = transactions.stream()
+                        .filter(tx -> tx.getDate().equals(date))
+                        .collect(Collectors.toList());
+                if (byDate.isEmpty()) {
+                    System.out.println("No transactions found on " + date);
+                    return;
+                }
+                transactions.removeAll(byDate);
+                System.out.println("Removed " + byDate.size() + " transaction(s) on " + date);
+                break;
+
+            case "3":
+                // Delete by vendor
+                System.out.print("Enter vendor name: ");
+                String vendorTerm = scanner.nextLine().trim().toLowerCase();
+                List<Transaction> byVendor = transactions.stream()
+                        .filter(tx -> tx.getVendor().toLowerCase().contains(vendorTerm))
+                        .collect(Collectors.toList());
+                if (byVendor.isEmpty()) {
+                    System.out.println("No transactions found for vendor containing \"" + vendorTerm + "\"");
+                    return;
+                }
+                transactions.removeAll(byVendor);
+                System.out.println("Removed " + byVendor.size() + " transaction(s) for vendor \"" + vendorTerm + "\"");
+                break;
+
+            default:
+                System.out.println("Unknown option.");
+                return;
+        }
+
+        // Recalculate and persist
+        calculateBalances();
+        saveAllTransactions();
+        System.out.println("Deletion complete.");
     }
 }
