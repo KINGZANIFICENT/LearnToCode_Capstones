@@ -127,6 +127,7 @@ public class AccountingLedgerApp {
             System.out.println("A) All");
             System.out.println("D) Deposits");
             System.out.println("P) Payments");
+            System.out.println("S) Search");
             System.out.println("H) Home");
             System.out.print("Choose an option: ");
             String choice = scanner.nextLine().trim().toUpperCase();
@@ -140,6 +141,9 @@ public class AccountingLedgerApp {
                     break;
                 case "P":
                     displayTransactions(filterPayments());
+                    break;
+                case "S":
+                    searchTransactions();
                     break;
                 case "H":
                     return;
@@ -177,7 +181,6 @@ public class AccountingLedgerApp {
 
     private static void calculateBalances() {
         double bal = 0;
-        // oldest first → newest last: index size-1 → 0
         for (int i = transactions.size() - 1; i >= 0; i--) {
             bal += transactions.get(i).getAmount();
             transactions.get(i).setBalance(bal);
@@ -188,7 +191,7 @@ public class AccountingLedgerApp {
         double totalDeposits = 0, totalPayments = 0;
         for (Transaction t : transactions) {
             if (t.getAmount() > 0) totalDeposits += t.getAmount();
-            else                totalPayments += t.getAmount();
+            else totalPayments += t.getAmount();
         }
         double endingBalance = transactions.isEmpty()
                 ? 0
@@ -205,6 +208,44 @@ public class AccountingLedgerApp {
         LocalDateTime now = LocalDateTime.now();
         String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String time = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-        return new String[]{ date, time };
+        return new String[]{date, time};
+    }
+
+    private static void searchTransactions() {
+        System.out.print("Start Date (yyyy-MM-dd) or leave blank: ");
+        String startDate = scanner.nextLine().trim();
+        System.out.print("End Date (yyyy-MM-dd) or leave blank: ");
+        String endDate = scanner.nextLine().trim();
+        System.out.print("Description contains or leave blank: ");
+        String description = scanner.nextLine().trim().toLowerCase();
+        System.out.print("Vendor contains or leave blank: ");
+        String vendor = scanner.nextLine().trim().toLowerCase();
+        System.out.print("Exact Amount or leave blank: ");
+        String amountStr = scanner.nextLine().trim();
+
+        List<Transaction> filtered = new ArrayList<>(transactions);
+
+        if (!startDate.isEmpty()) {
+            filtered.removeIf(t -> t.getDate().compareTo(startDate) < 0);
+        }
+        if (!endDate.isEmpty()) {
+            filtered.removeIf(t -> t.getDate().compareTo(endDate) > 0);
+        }
+        if (!description.isEmpty()) {
+            filtered.removeIf(t -> !t.getDescription().toLowerCase().contains(description));
+        }
+        if (!vendor.isEmpty()) {
+            filtered.removeIf(t -> !t.getVendor().toLowerCase().contains(vendor));
+        }
+        if (!amountStr.isEmpty()) {
+            try {
+                double amount = Double.parseDouble(amountStr);
+                filtered.removeIf(t -> t.getAmount() != amount);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid amount entered. Skipping amount filter.");
+            }
+        }
+
+        displayTransactions(filtered);
     }
 }
