@@ -34,7 +34,7 @@ public class AccountingLedgerApp {
                 try {
                     transactions.add(0, Transaction.fromCsv(line));
                 } catch (IllegalArgumentException ignored) {
-                    // skip bad lines
+                    // skip invalid lines
                 }
             }
         } catch (IOException e) {
@@ -62,20 +62,22 @@ public class AccountingLedgerApp {
             System.out.println("Error saving transactions: " + e.getMessage());
         }
     }
-    // LG10 banner
+
+    // LG10 banner and home screen
     private static void showHomeMenu() {
         System.out.println("LL      GGGG  TTTTTT   EEEEE  NN   NN ");
         System.out.println("LL     GG       TT     EE     NNN  NN ");
         System.out.println("LL     GG  GGG  TT     EEEE   NN N NN ");
         System.out.println("LL     GG   GG  TT     EE     NN  NNN ");
         System.out.println("LLLLL   GGGGG   TT     EEEEE  NN   NN ");
-        System.out.println("\u001B[32mWelcome, " + owner + "! Here's your personalized ledger.\u001B[0m");
-         // home screen
+        System.out.println("\u001B[32mWelcome, " + owner + "! Here's your ledger.\u001B[0m");
+        // main menu loop
         while (true) {
             System.out.println("\n=== Home Screen ===");
             System.out.println("D) Add Deposit");
             System.out.println("P) Make Payment (Debit)");
             System.out.println("C) Check Balance");
+            System.out.println("S) Spending by Category");
             System.out.println("L) Ledger");
             System.out.println("X) Exit");
             System.out.print("Choose an option: ");
@@ -91,6 +93,9 @@ public class AccountingLedgerApp {
                 case "C":
                     printCurrentBalance();
                     break;
+                case "S":
+                    checkSpendingByCategory();
+                    break;
                 case "L":
                     showLedgerMenu();
                     break;
@@ -103,6 +108,7 @@ public class AccountingLedgerApp {
             }
         }
     }
+
     // deposit logic
     private static void addDeposit() {
         System.out.print("Description: ");
@@ -129,8 +135,9 @@ public class AccountingLedgerApp {
         transactions.add(0, t);
         calculateBalances();
         saveTransaction(t);
-        System.out.println(" Deposit recorded.");
+        System.out.println("Deposit recorded.");
     }
+
     // payment logic negative payments
     private static void makePayment() {
         System.out.print("Description: ");
@@ -159,6 +166,7 @@ public class AccountingLedgerApp {
         saveTransaction(t);
         System.out.println("Payment recorded.");
     }
+
     // the sub menu
     private static void showLedgerMenu() {
         while (true) {
@@ -173,28 +181,17 @@ public class AccountingLedgerApp {
             String choice = scanner.nextLine().trim().toUpperCase();
 
             switch (choice) {
-                case "A":
-                    displayTransactions(transactions);
-                    break;
-                case "D":
-                    displayTransactions(filterDeposits());
-                    break;
-                case "P":
-                    displayTransactions(filterPayments());
-                    break;
-                case "S":
-                    searchTransactions();
-                    break;
-                case "R":
-                    deleteTransaction();
-                    break;
-                case "H":
-                    return;
-                default:
-                    System.out.println("Invalid option; please try again.");
+                case "A": displayTransactions(transactions); break;
+                case "D": displayTransactions(filterDeposits()); break;
+                case "P": displayTransactions(filterPayments()); break;
+                case "S": searchTransactions(); break;
+                case "R": deleteTransaction(); break;
+                case "H": return;
+                default:  System.out.println("Invalid option; please try again.");
             }
         }
     }
+
     // list only the deposits
     private static List<Transaction> filterDeposits() {
         List<Transaction> out = new ArrayList<>();
@@ -203,6 +200,7 @@ public class AccountingLedgerApp {
         }
         return out;
     }
+
     // list only the payments
     private static List<Transaction> filterPayments() {
         List<Transaction> out = new ArrayList<>();
@@ -211,7 +209,8 @@ public class AccountingLedgerApp {
         }
         return out;
     }
-    //if the list is empty prints each transaction
+
+    // if the list is empty prints each transaction
     private static void displayTransactions(List<Transaction> list) {
         if (list.isEmpty()) {
             System.out.println("No transactions to display.");
@@ -221,6 +220,7 @@ public class AccountingLedgerApp {
             }
         }
     }
+
     // recalculates the running balance
     private static void calculateBalances() {
         double bal = 0;
@@ -229,6 +229,7 @@ public class AccountingLedgerApp {
             transactions.get(i).setBalance(bal);
         }
     }
+
     // prints the balance
     private static void printSummary() {
         double totalDeposits = 0, totalPayments = 0;
@@ -242,19 +243,38 @@ public class AccountingLedgerApp {
                 totalDeposits, -totalPayments, endingBalance
         );
     }
+
     // prints the current balance
     private static void printCurrentBalance() {
         calculateBalances();
         double bal = transactions.isEmpty() ? 0.0 : transactions.get(0).getBalance();
         System.out.printf("Current balance: $%.2f%n", bal);
     }
-    //get current date and time
+
+    /**
+     * Prompts for a category and shows total spending (payments) in that category.
+     * NOTE: Requires Transaction.getCategory().
+     */
+    private static void checkSpendingByCategory() {
+        System.out.print("Enter category to check spending: ");
+        String cat = scanner.nextLine().trim().toLowerCase();
+        double total = 0;
+        for (Transaction t : transactions) {
+            if (t.getCategory().toLowerCase().equals(cat) && t.getAmount() < 0) {
+                total += t.getAmount();
+            }
+        }
+        System.out.printf("Total spending for category '%s': $%.2f%n", cat, -total);
+    }
+
+    // get current date and time
     private static String[] currentDateTime() {
         LocalDateTime now = LocalDateTime.now();
         String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String time = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         return new String[]{date, time};
     }
+
     // prompts for filters
     private static void searchTransactions() {
         System.out.print("Start Date (yyyy-MM-dd) or leave blank: ");
@@ -267,30 +287,23 @@ public class AccountingLedgerApp {
         String vendor = scanner.nextLine().trim().toLowerCase();
         System.out.print("Exact Amount or leave blank: ");
         String amountStr = scanner.nextLine().trim();
-        // applies whats not blank
+
         List<Transaction> filtered = new ArrayList<>(transactions);
-        if (!startDate.isEmpty()) {
-            filtered.removeIf(t -> t.getDate().compareTo(startDate) < 0);
-        }
-        if (!endDate.isEmpty()) {
-            filtered.removeIf(t -> t.getDate().compareTo(endDate) > 0);
-        }
-        if (!description.isEmpty()) {
-            filtered.removeIf(t -> !t.getDescription().toLowerCase().contains(description));
-        }
-        if (!vendor.isEmpty()) {
-            filtered.removeIf(t -> !t.getVendor().toLowerCase().contains(vendor));
-        }
+        if (!startDate.isEmpty()) filtered.removeIf(t -> t.getDate().compareTo(startDate) < 0);
+        if (!endDate.isEmpty())   filtered.removeIf(t -> t.getDate().compareTo(endDate) > 0);
+        if (!description.isEmpty()) filtered.removeIf(t -> !t.getDescription().toLowerCase().contains(description));
+        if (!vendor.isEmpty())      filtered.removeIf(t -> !t.getVendor().toLowerCase().contains(vendor));
         if (!amountStr.isEmpty()) {
             try {
-                double amount = Double.parseDouble(amountStr);
-                filtered.removeIf(t -> t.getAmount() != amount);
+                double amt = Double.parseDouble(amountStr);
+                filtered.removeIf(t -> t.getAmount() != amt);
             } catch (NumberFormatException e) {
                 System.out.println("Invalid amount; skipping that filter.");
             }
         }
         displayTransactions(filtered);
     }
+
     // handles deletes
     private static void deleteTransaction() {
         if (transactions.isEmpty()) {
@@ -308,15 +321,14 @@ public class AccountingLedgerApp {
 
             switch (mode) {
                 case "1":
-                    // Delete by ID
                     for (int i = 0; i < transactions.size(); i++) {
-                        System.out.printf("%2d) %s%n", i + 1, transactions.get(i));
+                        System.out.printf("%2d) %s%n", i+1, transactions.get(i));
                     }
                     while (true) {
                         System.out.print("Enter ID to delete: ");
                         String in = scanner.nextLine().trim();
                         try {
-                            int id = Integer.parseInt(in) - 1;
+                            int id = Integer.parseInt(in)-1;
                             if (id < 0 || id >= transactions.size()) {
                                 System.out.println("ID out of range; try again.");
                             } else {
@@ -331,39 +343,35 @@ public class AccountingLedgerApp {
                     break;
 
                 case "2":
-                    // Delete by Date
                     while (true) {
                         System.out.print("Enter date (YYYY-MM-DD): ");
-                        String date = scanner.nextLine().trim();
+                        String dt = scanner.nextLine().trim();
                         List<Transaction> byDate = transactions.stream()
-                                .filter(tx -> tx.getDate().equals(date))
+                                .filter(tx -> tx.getDate().equals(dt))
                                 .collect(Collectors.toList());
                         if (byDate.isEmpty()) {
                             System.out.println("No entries on that date; try again.");
-                        } else {
+                        }
+                        else {
                             transactions.removeAll(byDate);
-                            System.out.println("Removed " + byDate.size() + " entr" +
-                                    (byDate.size() == 1 ? "y" : "ies") + " on " + date);
+                            System.out.println("Removed " + byDate.size() + " entries on " + dt);
                             break;
                         }
                     }
                     break;
 
                 case "3":
-                    // Delete by Vendor
                     while (true) {
                         System.out.print("Enter vendor substring: ");
                         String vend = scanner.nextLine().trim().toLowerCase();
-                        List<Transaction> byVendor = transactions.stream()
+                        List<Transaction> byVend = transactions.stream()
                                 .filter(tx -> tx.getVendor().toLowerCase().contains(vend))
                                 .collect(Collectors.toList());
-                        if (byVendor.isEmpty()) {
+                        if (byVend.isEmpty()) {
                             System.out.println("No entries for that vendor; try again.");
                         } else {
-                            transactions.removeAll(byVendor);
-                            System.out.println("Removed " + byVendor.size() + " entr" +
-                                    (byVendor.size() == 1 ? "y" : "ies") +
-                                    " for vendor matching \"" + vend + "\"");
+                            transactions.removeAll(byVend);
+                            System.out.println("Removed " + byVend.size() + " entries for vendor '" + vend + "'");
                             break;
                         }
                     }
@@ -374,7 +382,6 @@ public class AccountingLedgerApp {
                     continue;
             }
 
-            // after successful deletion:
             calculateBalances();
             saveAllTransactions();
             System.out.println("Deletion complete.");
