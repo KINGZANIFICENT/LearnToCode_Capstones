@@ -31,23 +31,28 @@ public class AccountingLedgerApp {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                transactions.add(0, Transaction.fromCsv(line));
+                try {
+                    transactions.add(0, Transaction.fromCsv(line));
+                } catch (IllegalArgumentException ignored) {
+                    // skip bad lines
+                }
             }
         } catch (IOException e) {
-            System.out.println("Error Did Not Load: " + e.getMessage());
+            System.out.println("Error loading transactions: " + e.getMessage());
         }
     }
 
+    /** Append a single new transaction to the CSV */
     private static void saveTransaction(Transaction t) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
             bw.write(t.toCsv());
             bw.newLine();
         } catch (IOException e) {
-            System.out.println("Error Did Not Save: " + e.getMessage());
+            System.out.println("Error saving transaction: " + e.getMessage());
         }
     }
 
-    /** Overwrite the entire CSV from current list */
+    /** Rewrites the entire CSV from the in-memory list */
     private static void saveAllTransactions() {
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_NAME))) {
             for (Transaction t : transactions) {
@@ -59,19 +64,18 @@ public class AccountingLedgerApp {
     }
 
     private static void showHomeMenu() {
-
         System.out.println("LL      GGGG  TTTTTT   EEEEE  NN   NN ");
         System.out.println("LL     GG       TT     EE     NNN  NN ");
         System.out.println("LL     GG  GGG  TT     EEEE   NN N NN ");
         System.out.println("LL     GG   GG  TT     EE     NN  NNN ");
         System.out.println("LLLLL   GGGGG   TT     EEEEE  NN   NN ");
-
         System.out.println("\u001B[32mWelcome, " + owner + "! Here's your personalized ledger.\u001B[0m");
 
         while (true) {
             System.out.println("\n=== Home Screen ===");
             System.out.println("D) Add Deposit");
             System.out.println("P) Make Payment (Debit)");
+            System.out.println("C) Check Balance");
             System.out.println("L) Ledger");
             System.out.println("X) Exit");
             System.out.print("Choose an option: ");
@@ -84,6 +88,9 @@ public class AccountingLedgerApp {
                 case "P":
                     makePayment();
                     break;
+                case "C":
+                    printCurrentBalance();
+                    break;
                 case "L":
                     showLedgerMenu();
                     break;
@@ -92,45 +99,65 @@ public class AccountingLedgerApp {
                     System.out.println("Goodbye, " + owner + "!");
                     return;
                 default:
-                    System.out.println("Invalid choice. Choose one from the list.");
+                    System.out.println("Invalid choice; please try again.");
             }
         }
     }
 
     private static void addDeposit() {
         System.out.print("Description: ");
-        String desc = scanner.nextLine();
+        String desc = scanner.nextLine().trim();
         System.out.print("Vendor: ");
-        String ven = scanner.nextLine();
+        String ven = scanner.nextLine().trim();
         System.out.print("Category (e.g. Food, Rent): ");
-        String cat = scanner.nextLine();
-        System.out.print("Amount: ");
-        double amt = Double.parseDouble(scanner.nextLine());
-        String[] dt = currentDateTime();
+        String cat = scanner.nextLine().trim();
 
+        double amt;
+        while (true) {
+            System.out.print("Amount: ");
+            String in = scanner.nextLine().trim();
+            try {
+                amt = Double.parseDouble(in);
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid amount; enter a number.");
+            }
+        }
+
+        String[] dt = currentDateTime();
         Transaction t = new Transaction(dt[0], dt[1], desc, ven, cat, amt);
         transactions.add(0, t);
         calculateBalances();
         saveTransaction(t);
-        System.out.println("✅ Deposit recorded.");
+        System.out.println(" Deposit recorded.");
     }
 
     private static void makePayment() {
         System.out.print("Description: ");
-        String desc = scanner.nextLine();
+        String desc = scanner.nextLine().trim();
         System.out.print("Vendor: ");
-        String ven = scanner.nextLine();
+        String ven = scanner.nextLine().trim();
         System.out.print("Category (e.g. Utilities, Subscription): ");
-        String cat = scanner.nextLine();
-        System.out.print("Amount: ");
-        double amt = -Math.abs(Double.parseDouble(scanner.nextLine()));
-        String[] dt = currentDateTime();
+        String cat = scanner.nextLine().trim();
 
+        double amt;
+        while (true) {
+            System.out.print("Amount: ");
+            String in = scanner.nextLine().trim();
+            try {
+                amt = -Math.abs(Double.parseDouble(in));
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid amount; enter a number.");
+            }
+        }
+
+        String[] dt = currentDateTime();
         Transaction t = new Transaction(dt[0], dt[1], desc, ven, cat, amt);
         transactions.add(0, t);
         calculateBalances();
         saveTransaction(t);
-        System.out.println("✅ Payment recorded.");
+        System.out.println("Payment recorded.");
     }
 
     private static void showLedgerMenu() {
@@ -164,7 +191,7 @@ public class AccountingLedgerApp {
                 case "H":
                     return;
                 default:
-                    System.out.println("Invalid choice, try again.");
+                    System.out.println("Invalid option; please try again.");
             }
         }
     }
@@ -209,15 +236,17 @@ public class AccountingLedgerApp {
             if (t.getAmount() > 0) totalDeposits += t.getAmount();
             else totalPayments += t.getAmount();
         }
-        double endingBalance = transactions.isEmpty()
-                ? 0
-                : transactions.get(0).getBalance();
+        double endingBalance = transactions.isEmpty() ? 0 : transactions.get(0).getBalance();
         System.out.printf(
                 "\n=== Summary ===%nDeposits:  $%.2f%nPayments:  $%.2f%nEnding Balance: $%.2f%n",
-                totalDeposits,
-                -totalPayments,
-                endingBalance
+                totalDeposits, -totalPayments, endingBalance
         );
+    }
+
+    private static void printCurrentBalance() {
+        calculateBalances();
+        double bal = transactions.isEmpty() ? 0.0 : transactions.get(0).getBalance();
+        System.out.printf("Current balance: $%.2f%n", bal);
     }
 
     private static String[] currentDateTime() {
@@ -240,7 +269,6 @@ public class AccountingLedgerApp {
         String amountStr = scanner.nextLine().trim();
 
         List<Transaction> filtered = new ArrayList<>(transactions);
-
         if (!startDate.isEmpty()) {
             filtered.removeIf(t -> t.getDate().compareTo(startDate) < 0);
         }
@@ -258,10 +286,9 @@ public class AccountingLedgerApp {
                 double amount = Double.parseDouble(amountStr);
                 filtered.removeIf(t -> t.getAmount() != amount);
             } catch (NumberFormatException e) {
-                System.out.println("Invalid amount entered. Skipping amount filter.");
+                System.out.println("Invalid amount; skipping that filter.");
             }
         }
-
         displayTransactions(filtered);
     }
 
@@ -271,72 +298,87 @@ public class AccountingLedgerApp {
             return;
         }
 
-        System.out.println("Delete by:");
-        System.out.println("  1) ID");
-        System.out.println("  2) Date (YYYY-MM-DD)");
-        System.out.println("  3) Vendor");
-        System.out.print("Choose mode: ");
-        String mode = scanner.nextLine().trim();
+        while (true) {
+            System.out.println("\nRemove by:");
+            System.out.println("  1) ID");
+            System.out.println("  2) Date (YYYY-MM-DD)");
+            System.out.println("  3) Vendor");
+            System.out.print("Choose mode: ");
+            String mode = scanner.nextLine().trim();
 
-        switch (mode) {
-            case "1":
-                // Delete by ID
-                for (int i = 0; i < transactions.size(); i++) {
-                    System.out.printf("%2d) %s%n", i + 1, transactions.get(i));
-                }
-                System.out.print("Enter the ID to delete: ");
-                try {
-                    int id = Integer.parseInt(scanner.nextLine().trim()) - 1;
-                    if (id < 0 || id >= transactions.size()) {
-                        System.out.println("ID out of range.");
-                        return;
+            switch (mode) {
+                case "1":
+                    // Delete by ID
+                    for (int i = 0; i < transactions.size(); i++) {
+                        System.out.printf("%2d) %s%n", i + 1, transactions.get(i));
                     }
-                    Transaction removed = transactions.remove(id);
-                    System.out.println("Deleted: " + removed);
-                } catch (NumberFormatException e) {
-                    System.out.println("Invalid number.");
-                    return;
-                }
-                break;
+                    while (true) {
+                        System.out.print("Enter ID to delete: ");
+                        String in = scanner.nextLine().trim();
+                        try {
+                            int id = Integer.parseInt(in) - 1;
+                            if (id < 0 || id >= transactions.size()) {
+                                System.out.println("ID out of range; try again.");
+                            } else {
+                                Transaction removed = transactions.remove(id);
+                                System.out.println("Deleted: " + removed);
+                                break;
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid number; try again.");
+                        }
+                    }
+                    break;
 
-            case "2":
-                // Delete by date
-                System.out.print("Enter date (YYYY-MM-DD): ");
-                String date = scanner.nextLine().trim();
-                List<Transaction> byDate = transactions.stream()
-                        .filter(tx -> tx.getDate().equals(date))
-                        .collect(Collectors.toList());
-                if (byDate.isEmpty()) {
-                    System.out.println("No transactions found on " + date);
-                    return;
-                }
-                transactions.removeAll(byDate);
-                System.out.println("Removed " + byDate.size() + " transaction(s) on " + date);
-                break;
+                case "2":
+                    // Delete by Date
+                    while (true) {
+                        System.out.print("Enter date (YYYY-MM-DD): ");
+                        String date = scanner.nextLine().trim();
+                        List<Transaction> byDate = transactions.stream()
+                                .filter(tx -> tx.getDate().equals(date))
+                                .collect(Collectors.toList());
+                        if (byDate.isEmpty()) {
+                            System.out.println("No entries on that date; try again.");
+                        } else {
+                            transactions.removeAll(byDate);
+                            System.out.println("Removed " + byDate.size() + " entr" +
+                                    (byDate.size() == 1 ? "y" : "ies") + " on " + date);
+                            break;
+                        }
+                    }
+                    break;
 
-            case "3":
-                // Delete by vendor
-                System.out.print("Enter vendor name: ");
-                String vendorTerm = scanner.nextLine().trim().toLowerCase();
-                List<Transaction> byVendor = transactions.stream()
-                        .filter(tx -> tx.getVendor().toLowerCase().contains(vendorTerm))
-                        .collect(Collectors.toList());
-                if (byVendor.isEmpty()) {
-                    System.out.println("No transactions found for vendor containing \"" + vendorTerm + "\"");
-                    return;
-                }
-                transactions.removeAll(byVendor);
-                System.out.println("Removed " + byVendor.size() + " transaction(s) for vendor \"" + vendorTerm + "\"");
-                break;
+                case "3":
+                    // Delete by Vendor
+                    while (true) {
+                        System.out.print("Enter vendor substring: ");
+                        String vend = scanner.nextLine().trim().toLowerCase();
+                        List<Transaction> byVendor = transactions.stream()
+                                .filter(tx -> tx.getVendor().toLowerCase().contains(vend))
+                                .collect(Collectors.toList());
+                        if (byVendor.isEmpty()) {
+                            System.out.println("No entries for that vendor; try again.");
+                        } else {
+                            transactions.removeAll(byVendor);
+                            System.out.println("Removed " + byVendor.size() + " entr" +
+                                    (byVendor.size() == 1 ? "y" : "ies") +
+                                    " for vendor matching \"" + vend + "\"");
+                            break;
+                        }
+                    }
+                    break;
 
-            default:
-                System.out.println("Unknown option.");
-                return;
+                default:
+                    System.out.println("Invalid mode; please choose 1, 2, or 3.");
+                    continue;
+            }
+
+            // after successful deletion:
+            calculateBalances();
+            saveAllTransactions();
+            System.out.println("Deletion complete.");
+            break;
         }
-
-        // Recalculate and persist
-        calculateBalances();
-        saveAllTransactions();
-        System.out.println("Deletion complete.");
     }
 }

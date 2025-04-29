@@ -53,34 +53,34 @@ A terminal or command prompt.
 
 ----------------------------------------------------------------------------------------
 
-## Usage ## 
+## Usage ##
+Ensure transactions.csv is in the working directory (it will be created if missing). On startup, you’ll see the ASCII
+art banner.
 
-Ensure transactions.csv is in the working directory (it will be created if missing).
-On startup, you’ll see the ASCII art banner
 Navigating the Main Menu
-Immediately after the banner, you’ll be prompted with a numbered menu. Just type the number of the action you want:
+Immediately after the banner, you’ll be prompted with a letter-based menu just type the letter of the action you want:
 
-1 Add a New Transaction
-– You’ll be asked for details like date, description, and amount.
+D Add a Deposit
+– You’ll be asked for description, vendor, category, and amount.
 – The entry is saved to transactions.csv.
 
-2 View All Transactions
-– Displays every transaction in reverse chronological order.
+P Make a Payment (Debit)
+– Similar prompts, amount is stored negative.
 
-3 Search Transactions
-– Enter a keyword or phrase, and only matching entries will be shown.
+C Check Current Balance
+– Shows your up-to-date balance without listing transactions.
 
-4 Delete a Transaction
-– Supply the transaction’s ID to remove it from the ledger forever.
+L Ledger
+– Sub-menu to view all, deposits, payments, search, or remove transactions.
 
-x Exit
-– Closes the application cleanly.
+X Exit
+– Closes the app
 
 ## what the app does ##
 
 Persistent Storage
 File Location & Name
-Stored by default in the working directory as transactions.csv. The filename is defined in AccountingLedgerApp.java via:
+Stored by default as transactions.csv The filename is defined in AccountingLedgerApp.java as
 
 ```private static final String FILE_NAME = "transactions.csv"```
 
@@ -97,7 +97,7 @@ Stored by default in the working directory as transactions.csv. The filename is 
 - it’s already reverse-chronological.
 
 ## Saving New Entries ##
-- The addTransaction() workflow:
+- The addTransaction()
 - Prompts the user for date, description, and amount.
 - Creates a new Transaction with an auto-incremented ID (based on the last-used ID + 1).
 - Calls saveTransaction(t), which uses a FileWriter in append mode (new FileWriter(FILE_NAME, true)) to add a single line:
