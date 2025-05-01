@@ -175,5 +175,35 @@ Uses System.out.printf() for column alignment.
 ## Clean Exit ##
 Choosing “5” simply returns from showHomeMenu(), allowing main() to finish without leaving open file handles or dangling threads.
 
-
+## Images 
+----------------------------------------------------------------------
+## Homescreen
+![ledger1.PNG](images/ledger1.PNG)
+----------------------------------------------------------------------
+## Depositing
+![ledger2.PNG](images/ledger2.PNG)
+----------------------------------------------------------------------
+## Making A Payment
+![ledger3.PNG](images/ledger3.PNG)
+----------------------------------------------------------------------
+## Checking Balance
+![ledger4.PNG](images/ledger4.PNG)
+----------------------------------------------------------------------
+## Accessing Ledger Sub Menu
+![ledger5.PNG](images/ledger5.PNG)
+----------------------------------------------------------------------
+## Looking At All Transactions
+![ledger6.PNG](images/ledger6.PNG)
+----------------------------------------------------------------------
+## Looking At All Deposits Then Payments
+![ledger7.PNG](images/ledger7.PNG)
+----------------------------------------------------------------------
+## Searching By Date
+![ledger8.PNG](images/ledger8.PNG)
+----------------------------------------------------------------------
+## Removing A Transaction
+![ledger9.PNG](images/ledger9.PNG)
+----------------------------------------------------------------------
+## Exit Screen
+![ledger10.PNG](images/ledger10.PNG)
 
