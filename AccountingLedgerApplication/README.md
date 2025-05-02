@@ -16,7 +16,7 @@ A terminal or command prompt.
 
 ----------------------------------------------------------------------------------------
 
-## Installation ## 
+## installation Without Maven ## 
 - Clone the repository
    
 ```git clone git@github.com:KINGZANIFICENT/LearnToCode_Capstones.git```
@@ -37,7 +37,7 @@ A terminal or command prompt.
 
 ----------------------------------------------------------------------------------------
 
-## installation Without Maven ##
+## installation ##
 - Clone the repository
 
 ```git clone git@github.com:KINGZANIFICENT/LearnToCode_Capstones.git```
