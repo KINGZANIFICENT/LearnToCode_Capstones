@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static com.pluralsight.ui.UIUtils.*;
 
 public class AccountingLedgerApp {
-    // CSV file name for storing transactions
+    // for storing transactions
     private static final String FILE_NAME = "transactions.csv";
     // In-memory list of all transactions
     private static List<Transaction> transactions = new ArrayList<>();
@@ -31,7 +31,6 @@ public class AccountingLedgerApp {
             calculateBalances();  // Recalculate running balances for each transaction
         });
 
-        // 3) Display ASCII art banner and welcome message
         System.out.println(CYAN + BOLD + "LL      GGGG  TTTTTT   EEEEE  NN   NN " + RESET);
         System.out.println(CYAN + BOLD + "LL     GG       TT     EE     NNN  NN " + RESET);
         System.out.println(CYAN + BOLD + "LL     GG  GGG  TT     EEEE   NN N NN " + RESET);

@@ -189,21 +189,20 @@ Choosing “5” simply returns from showHomeMenu(), allowing main() to finish w
 ## Checking Balance
 ![ledger4.PNG](images/ledger4.PNG)
 ----------------------------------------------------------------------
-## Accessing Ledger Sub Menu
+## Spending By Category
 ![ledger5.PNG](images/ledger5.PNG)
 ----------------------------------------------------------------------
-## Looking At All Transactions
+## Accessing Ledger Sub Menu
 ![ledger6.PNG](images/ledger6.PNG)
 ----------------------------------------------------------------------
 ## Looking At All Deposits Then Payments
 ![ledger7.PNG](images/ledger7.PNG)
 ----------------------------------------------------------------------
 ## Searching By Date
-![ledger8.PNG](images/ledger8.PNG)
-----------------------------------------------------------------------
-## Removing A Transaction
 ![ledger9.PNG](images/ledger9.PNG)
 ----------------------------------------------------------------------
-## Exit Screen
+## Removing A Transaction
 ![ledger10.PNG](images/ledger10.PNG)
-
+----------------------------------------------------------------------
+## Exit Screen
+![ledger11.PNG](images/ledger11.PNG)
